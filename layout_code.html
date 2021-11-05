@@ -2,9 +2,32 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>{{.Title}}</title>
+    <script src="codemirror/lib/codemirror.js"></script>
+    <link rel="stylesheet" href="codemirror/lib/codemirror.css">
+    <script src="codemirror/mode/javascript/javascript.js"></script>
 </head>
 <body>
-<code>{{ code }}</code>
+<p>{{.Title}}</p>
+<div id="cdmr">
+</div>
+
+<script>
+    let myCodeMirror = CodeMirror(document.getElementById("cdmr"), {
+        value: `{{.Code}}`,
+        mode: "cpp",
+        lineNumbers: true,
+        readOnly: true,
+    });
+    myCodeMirror.markText({line:{{.FromLine}},ch:0},{line:{{.ToLine}},ch:0}, {
+        className: "redfont",
+        readOnly: true,
+    });
+</script>
+<style>
+    .redfont {
+        color: red;
+    }
+</style>
 </body>
 </html>

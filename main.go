@@ -3,7 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
-	// "html/template"
+	"html/template"
 	"log"
 	"os"
 	"os/exec"
@@ -49,20 +49,58 @@ func main() {
 		f1, _ := os.Open(filename1)
 		f2, _ := os.Open(filename2)
 
+		var code1, code2 string
+
 		scanner := bufio.NewScanner(f1)
 		linenum := 1
 		fmt.Println(filename1)
 		for scanner.Scan() {
-			fmt.Printf("%2d %s\n", linenum, scanner.Text())
+			code1 += fmt.Sprintf("%s\n", scanner.Text())
 			linenum++
 		}
+		fmt.Println(code1)
 
 		scanner = bufio.NewScanner(f2)
 		linenum = 1
 		fmt.Println(filename2)
 		for scanner.Scan() {
-			fmt.Printf("%2d %s\n", linenum, scanner.Text())
+			code2 += fmt.Sprintf("%s\n", scanner.Text())
 			linenum++
 		}
+		fmt.Println(code1)
+		//code1 = html.EscapeString(code1)
+		//code2 = html.EscapeString(code2)
+
+		f1.Close()
+		f2.Close()
+
+		type templateCodeData struct {
+			Title    string
+			Code     string
+			FromLine int
+			ToLine   int
+		}
+
+		templateCode, _ := template.ParseFiles("layout_code.html")
+		data := templateCodeData{
+			Title:    filename1,
+			Code:     code1,
+			FromLine: beginLine1 - 1,
+			ToLine:   endLine1,
+		}
+		ff, _ := os.Create(filename1 + ".html")
+		templateCode.Execute(ff, data)
+		ff.Close()
+
+		data = templateCodeData{
+			Title:    filename2,
+			Code:     code2,
+			FromLine: beginLine2 - 1,
+			ToLine:   endLine2,
+		}
+		ff, _ = os.Create(filename2 + ".html")
+		templateCode.Execute(ff, data)
+		ff.Close()
+
 	}
 }
