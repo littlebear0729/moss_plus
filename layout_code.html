@@ -1,7 +1,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Matches for {{.Filename1}} and {{.Filename2}}</title>
+    <title>Matches for {{.FileName1}} and {{.FileName2}}</title>
     <script src="codemirror/lib/codemirror.js"></script>
     <link rel="stylesheet" href="codemirror/lib/codemirror.css">
     <script src="codemirror/mode/javascript/javascript.js"></script>
@@ -9,18 +9,18 @@
 <body>
 <div class="top">
     <div class="banner">
-        <span>{{.Filename1}} | {{.Filename2}}</span>
+        <span>{{.FileName1}} | {{.FileName2}}</span>
     </div>
 </div>
 <div class="bottom">
     <div class="leftCode">
-        <span>{{.Filename1}}:</span>
-        {{range .DuplicateLines}}<span>line {{.BeginLine1}}-{{.EndLine1}}</span>{{end}}
+        <span>{{.FileName1}}:</span>
+        {{range .DuplicateLines}}<span>line {{.LineRange1.BeginLine}}-{{.LineRange1.EndLine}}</span>{{end}}
         <div id="leftCodeMirror"></div>
     </div>
     <div class="rightCode">
-        <span>{{.Filename2}}:</span>
-        {{range .DuplicateLines}}<span>line {{.BeginLine2}}-{{.EndLine2}}</span>{{end}}
+        <span>{{.FileName2}}:</span>
+        {{range .DuplicateLines}}<span>line {{.LineRange2.BeginLine}}-{{.LineRange2.EndLine}}</span>{{end}}
         <div id="rightCodeMirror"></div>
     </div>
 </div>
@@ -54,7 +54,7 @@
     });
 
     {{range .DuplicateLines}}
-    leftCodeMirror.markText({line:{{.BeginLine1}},ch:0},{line:{{.EndLine1}},ch:0}, {
+    leftCodeMirror.markText({line:{{.LineRange1.BeginLine}},ch:0},{line:{{.LineRange1.EndLine}},ch:0}, {
         className: "highlightCode",
         readOnly: true,
     });
@@ -68,7 +68,7 @@
     });
 
     {{range .DuplicateLines}}
-    rightCodeMirror.markText({line:{{.BeginLine2}},ch:0},{line:{{.EndLine2}},ch:0}, {
+    rightCodeMirror.markText({line:{{.LineRange2.BeginLine}},ch:0},{line:{{.LineRange2.EndLine}},ch:0}, {
         className: "highlightCode",
         readOnly: true,
     });

@@ -11,15 +11,22 @@ import (
 	"strings"
 )
 
-type duplicateLineList struct {
-	BeginLine1, BeginLine2 int
-	EndLine1, EndLine2     int
+type lineRange struct {
+	Begin, End int
+}
+
+type duplicateLine struct {
+	LineRange1, LineRange2 lineRange
 }
 
 type templateCodeData struct {
-	Filename1, Filename2 string
+	FileName1, FileName2 string
 	Code1, Code2         string
-	DuplicateLines       []duplicateLineList
+	DuplicateLines       []duplicateLine
+}
+
+type mapKey struct {
+	FileName1, FileName2 string
 }
 
 func runSim() []string {
@@ -73,18 +80,11 @@ func getCodes(filename string) (int, string) {
 	return linenum, code
 }
 
-func genHtml(filename1 string, code1 string, filename2 string, code2 string, duplicateLines []duplicateLineList) {
+func genHtml(data templateCodeData) {
 
 	templateCode, _ := template.ParseFiles("layout_code.html")
-	data := templateCodeData{
-		Filename1:      filename1,
-		Filename2:      filename2,
-		Code1:          code1,
-		Code2:          code2,
-		DuplicateLines: duplicateLines,
-	}
 	// fmt.Println(data)
-	f, _ := os.Create(filename1 + "-" + filename2 + ".html")
+	f, _ := os.Create(data.FileName1 + "-" + data.FileName2 + ".html")
 	templateCode.Execute(f, data)
 	f.Close()
 }
@@ -92,20 +92,13 @@ func genHtml(filename1 string, code1 string, filename2 string, code2 string, dup
 func main() {
 	diff := runSim()
 
+	m := make(map[mapKey]templateCodeData)
+
 	for _, s := range diff[1:] {
 		fmt.Println(s)
 		filename1, line1, filename2, line2 := getFiles(s)
 		beginLine1, endLine1 := getLines(line1)
 		beginLine2, endLine2 := getLines(line2)
-
-		duplicateLine := []duplicateLineList{
-			{
-				beginLine1,
-				beginLine2,
-				endLine1,
-				endLine2,
-			},
-		}
 
 		fmt.Printf("filename1: %s, from: %d, to: %d\n", filename1, beginLine1, endLine1)
 		fmt.Printf("filename2: %s, from: %d, to: %d\n", filename2, beginLine2, endLine2)
@@ -113,6 +106,25 @@ func main() {
 		_, code1 := getCodes(filename1)
 		_, code2 := getCodes(filename2)
 
-		genHtml(filename1, code1, filename2, code2, duplicateLine)
+		if _, ok := m[mapKey{filename1, filename2}]; !ok {
+			m[mapKey{filename1, filename2}] = templateCodeData{
+				filename1, filename2, code1, code2,
+				[]duplicateLine{},
+			}
+		}
+
+		temp := m[mapKey{filename1, filename2}].DuplicateLines
+		temp = append(temp, duplicateLine{
+			LineRange1: lineRange{beginLine1, endLine1},
+			LineRange2: lineRange{beginLine2, endLine2},
+		})
+
+		m[mapKey{filename1, filename2}].DuplicateLines = temp
+	}
+
+	fmt.Println(m)
+
+	for key, _ := range m {
+		genHtml(m[key])
 	}
 }
