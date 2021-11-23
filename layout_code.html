@@ -9,16 +9,18 @@
 <body>
 <div class="top">
     <div class="banner">
-        <p>{{.Filename1}}: line {{.BeginLine1}}-{{.EndLine1}}  |  {{.Filename2}}: line {{.BeginLine2}}-{{.EndLine2}}</p>
+        <span>{{.Filename1}} | {{.Filename2}}</span>
     </div>
 </div>
 <div class="bottom">
     <div class="leftCode">
-        <span>{{.Filename1}}: line {{.BeginLine1}}-{{.EndLine1}}</span>
+        <span>{{.Filename1}}:</span>
+        {{range .DuplicateLines}}<span>line {{.BeginLine1}}-{{.EndLine1}}</span>{{end}}
         <div id="leftCodeMirror"></div>
     </div>
     <div class="rightCode">
-        <span>{{.Filename2}}: line {{.BeginLine2}}-{{.EndLine2}}</span>
+        <span>{{.Filename2}}:</span>
+        {{range .DuplicateLines}}<span>line {{.BeginLine2}}-{{.EndLine2}}</span>{{end}}
         <div id="rightCodeMirror"></div>
     </div>
 </div>
@@ -50,10 +52,13 @@
         lineNumbers: true,
         readOnly: true,
     });
+
+    {{range .DuplicateLines}}
     leftCodeMirror.markText({line:{{.BeginLine1}},ch:0},{line:{{.EndLine1}},ch:0}, {
         className: "highlightCode",
         readOnly: true,
     });
+    {{end}}
 
     let rightCodeMirror = CodeMirror(document.getElementById("rightCodeMirror"), {
         value: {{.Code2}},
@@ -61,9 +66,12 @@
         lineNumbers: true,
         readOnly: true
     });
+
+    {{range .DuplicateLines}}
     rightCodeMirror.markText({line:{{.BeginLine2}},ch:0},{line:{{.EndLine2}},ch:0}, {
         className: "highlightCode",
         readOnly: true,
     });
+    {{end}}
 </script>
 </html>

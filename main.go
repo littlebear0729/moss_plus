@@ -11,11 +11,15 @@ import (
 	"strings"
 )
 
-type templateCodeData struct {
-	Filename1, Filename2   string
-	Code1, Code2           string
+type duplicateLineList struct {
 	BeginLine1, BeginLine2 int
 	EndLine1, EndLine2     int
+}
+
+type templateCodeData struct {
+	Filename1, Filename2 string
+	Code1, Code2         string
+	DuplicateLines       []duplicateLineList
 }
 
 func runSim() []string {
@@ -69,19 +73,15 @@ func getCodes(filename string) (int, string) {
 	return linenum, code
 }
 
-func genHtml(filename1 string, code1 string, beginLine1 int, endLine1 int,
-	filename2 string, code2 string, beginLine2 int, endLine2 int) {
+func genHtml(filename1 string, code1 string, filename2 string, code2 string, duplicateLines []duplicateLineList) {
 
 	templateCode, _ := template.ParseFiles("layout_code.html")
 	data := templateCodeData{
-		Filename1:  filename1,
-		Filename2:  filename2,
-		Code1:      code1,
-		Code2:      code2,
-		BeginLine1: beginLine1 - 1,
-		BeginLine2: beginLine2 - 1,
-		EndLine1:   endLine1,
-		EndLine2:   endLine2,
+		Filename1:      filename1,
+		Filename2:      filename2,
+		Code1:          code1,
+		Code2:          code2,
+		DuplicateLines: duplicateLines,
 	}
 	// fmt.Println(data)
 	f, _ := os.Create(filename1 + "-" + filename2 + ".html")
@@ -98,12 +98,21 @@ func main() {
 		beginLine1, endLine1 := getLines(line1)
 		beginLine2, endLine2 := getLines(line2)
 
+		duplicateLine := []duplicateLineList{
+			{
+				beginLine1,
+				beginLine2,
+				endLine1,
+				endLine2,
+			},
+		}
+
 		fmt.Printf("filename1: %s, from: %d, to: %d\n", filename1, beginLine1, endLine1)
 		fmt.Printf("filename2: %s, from: %d, to: %d\n", filename2, beginLine2, endLine2)
 
 		_, code1 := getCodes(filename1)
 		_, code2 := getCodes(filename2)
 
-		genHtml(filename1, code1, beginLine1, endLine1, filename2, code2, beginLine2, endLine2)
+		genHtml(filename1, code1, filename2, code2, duplicateLine)
 	}
 }
