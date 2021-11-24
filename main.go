@@ -3,6 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/jessevdk/go-flags"
+	"path"
+
+	//"github.com/google/shlex"
 	"html/template"
 	"log"
 	"math"
@@ -32,8 +36,8 @@ type mapKey struct {
 	FileName1, FileName2 string
 }
 
-func runSim() []string {
-	out, err := exec.Command("bash", "-c", "sim_c++ -nT -w1 *.cpp").Output()
+func runSim(files []string, opt *Args) []string {
+	out, err := exec.Command("bash", "-c", "sim_" +opt.Language+ " -nT -w1 " + strings.Join(files, " ")).Output()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -96,34 +100,57 @@ func calDuplicateRate(line []duplicateLine) float64 {
 	}
 }
 
-func genHtml(data templateCodeData) {
+func genHtml(data templateCodeData, opt *Args) {
 
 	templateCode, _ := template.ParseFiles("layout_code.tmpl")
 	// fmt.Println(data)
-	f, _ := os.Create(data.FileName1 + "-" + data.FileName2 + ".html")
-	err := templateCode.Execute(f, data)
+	err := os.MkdirAll(opt.Output, 0755)
+	if err != nil {
+		panic(err)
+	}
+	f, err := os.Create(path.Join(opt.Output, data.FileName1 + "-" + data.FileName2 + ".html"))
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(data)
+	err = templateCode.Execute(f, data)
 	if err != nil {
 		panic(err)
 	}
 	f.Close()
 }
 
-func genSummary(data []templateCodeData) {
+func genSummary(data []templateCodeData, opt *Args) {
 	sort.Slice(data, func(i, j int) bool {
 		return data[i].DuplicateRate > data[j].DuplicateRate
 	})
 
 	templateCode, _ := template.ParseFiles("summary.tmpl")
-	f, _ := os.Create("summary.html")
-	err := templateCode.Execute(f, data)
+	f, err := os.Create(path.Join(opt.Output, "summary.html"))
+	if err != nil {
+		panic(err)
+	}
+	err = templateCode.Execute(f, data)
 	if err != nil {
 		panic(err)
 	}
 	f.Close()
 }
 
+type Args struct {
+	Language string `short:"l" long:"language" description:"language" default:"c++"`
+	Output string `short:"o" long:"output" description:"output" default:"output"`
+}
+
 func main() {
-	diff := runSim()
+	parser := flags.NewNamedParser("eduOJ server", flags.HelpFlag|flags.PassDoubleDash)
+	opt := Args{}
+	parser.AddGroup("Options", "Options", &opt)
+	files, err := parser.Parse()
+	if err!= nil {
+		panic(err)
+	}
+	diff := runSim(files, &opt)
 
 	m := make(map[mapKey]templateCodeData)
 
@@ -138,6 +165,9 @@ func main() {
 
 		_, code1 := getCodes(filename1)
 		_, code2 := getCodes(filename2)
+
+		_, filename1 = path.Split(filename1)
+		_, filename2 = path.Split(filename2)
 
 		if _, ok := m[mapKey{filename1, filename2}]; !ok {
 			m[mapKey{filename1, filename2}] = templateCodeData{
@@ -164,9 +194,9 @@ func main() {
 
 	var allDup []templateCodeData
 	for key, _ := range m {
-		genHtml(m[key])
+		genHtml(m[key], &opt)
 		allDup = append(allDup, m[key])
 	}
 
-	genSummary(allDup)
+	genSummary(allDup, &opt)
 }
