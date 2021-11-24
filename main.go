@@ -4,14 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/jessevdk/go-flags"
-	"path"
-
-	//"github.com/google/shlex"
 	"html/template"
 	"log"
 	"math"
 	"os"
 	"os/exec"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -36,14 +34,16 @@ type mapKey struct {
 	FileName1, FileName2 string
 }
 
+// Run similarity test
 func runSim(files []string, opt *Args) []string {
-	out, err := exec.Command("bash", "-c", "sim_" +opt.Language+ " -nT -w1 " + strings.Join(files, " ")).Output()
+	out, err := exec.Command("bash", "-c", "sim_"+opt.Language+" -nT -w1 "+strings.Join(files, " ")).Output()
 	if err != nil {
 		log.Fatal(err)
 	}
 	output := string(out)
 	lines := strings.Split(output, "\n")
 	var diff []string
+	// Get output line by line
 	for _, s := range lines {
 		if s != "" {
 			diff = append(diff, s)
@@ -52,6 +52,7 @@ func runSim(files []string, opt *Args) []string {
 	return diff
 }
 
+// Get filename and line pairs in an output line
 func getFiles(f string) (string, string, string, string) {
 	file1 := strings.Split(f, "|")[0]
 	file2 := strings.Split(f, "|")[1]
@@ -66,6 +67,7 @@ func getFiles(f string) (string, string, string, string) {
 	return filename1, line1, filename2, line2
 }
 
+// Get begin and end line in a line pair
 func getLines(s string) (int, int) {
 	beginLine, _ := strconv.Atoi(strings.Split(s, "-")[0])
 	endLine, _ := strconv.Atoi(strings.Split(s, "-")[1])
@@ -73,6 +75,7 @@ func getLines(s string) (int, int) {
 	return beginLine, endLine
 }
 
+// Get code line by line from a filename
 func getCodes(filename string) (int, string) {
 	f, _ := os.Open(filename)
 	var code string
@@ -87,6 +90,7 @@ func getCodes(filename string) (int, string) {
 	return linenum, code
 }
 
+// Calculate duplicate rate by lines
 func calDuplicateRate(line []duplicateLine) float64 {
 	var file1lines, file2lines int
 	for _, val := range line {
@@ -100,6 +104,7 @@ func calDuplicateRate(line []duplicateLine) float64 {
 	}
 }
 
+// Generate a similar file pair result as a html page
 func genHtml(data templateCodeData, opt *Args) {
 
 	templateCode, _ := template.ParseFiles("layout_code.tmpl")
@@ -108,7 +113,7 @@ func genHtml(data templateCodeData, opt *Args) {
 	if err != nil {
 		panic(err)
 	}
-	f, err := os.Create(path.Join(opt.Output, data.FileName1 + "-" + data.FileName2 + ".html"))
+	f, err := os.Create(path.Join(opt.Output, data.FileName1+"-"+data.FileName2+".html"))
 	if err != nil {
 		panic(err)
 	}
@@ -120,6 +125,7 @@ func genHtml(data templateCodeData, opt *Args) {
 	f.Close()
 }
 
+// Generate all similar file pairs result as a html page
 func genSummary(data []templateCodeData, opt *Args) {
 	sort.Slice(data, func(i, j int) bool {
 		return data[i].DuplicateRate > data[j].DuplicateRate
@@ -139,15 +145,16 @@ func genSummary(data []templateCodeData, opt *Args) {
 
 type Args struct {
 	Language string `short:"l" long:"language" description:"language" default:"c++"`
-	Output string `short:"o" long:"output" description:"output" default:"output"`
+	Output   string `short:"o" long:"output" description:"output" default:"output"`
 }
 
 func main() {
+	// Parse parameters
 	parser := flags.NewNamedParser("eduOJ server", flags.HelpFlag|flags.PassDoubleDash)
 	opt := Args{}
 	parser.AddGroup("Options", "Options", &opt)
 	files, err := parser.Parse()
-	if err!= nil {
+	if err != nil {
 		panic(err)
 	}
 	diff := runSim(files, &opt)
@@ -176,6 +183,7 @@ func main() {
 			}
 		}
 
+		// Handle many similar line pairs in two files
 		t := m[mapKey{filename1, filename2}]
 		t.DuplicateLines = append(t.DuplicateLines, duplicateLine{
 			LineRange1: lineRange{beginLine1, endLine1},
@@ -185,6 +193,7 @@ func main() {
 		m[mapKey{filename1, filename2}] = t
 	}
 
+	// Calculate duplicate rate one by one, rounded to 2 decimals
 	for key, _ := range m {
 		t := m[key]
 		dupRate := calDuplicateRate(t.DuplicateLines)
@@ -192,6 +201,7 @@ func main() {
 		m[key] = t
 	}
 
+	// Prepare for generating summary page
 	var allDup []templateCodeData
 	for key, _ := range m {
 		genHtml(m[key], &opt)
