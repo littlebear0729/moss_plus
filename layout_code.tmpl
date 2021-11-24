@@ -33,6 +33,9 @@
         height: 5%;
         /*background: #ec6c99;*/
     }
+    .CodeMirror {
+        height: auto;
+    }
     .leftCode {
         float: left;
         width: 50%;
@@ -54,6 +57,7 @@
         mode: "cpp",
         lineNumbers: true,
         readOnly: true,
+        viewportMargin: Infinity
     });
 
     {{range .DuplicateLines}}
@@ -67,7 +71,8 @@
         value: {{.Code2}},
         mode: "cpp",
         lineNumbers: true,
-        readOnly: true
+        readOnly: true,
+        viewportMargin: Infinity
     });
 
     {{range .DuplicateLines}}
