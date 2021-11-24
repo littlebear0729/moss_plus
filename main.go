@@ -30,7 +30,7 @@ type mapKey struct {
 }
 
 func runSim() []string {
-	out, err := exec.Command("bash", "-c", "./sim_c++ -nT -w1 *.cpp").Output()
+	out, err := exec.Command("bash", "-c", "sim_c++ -nT -w1 *.cpp").Output()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -82,10 +82,13 @@ func getCodes(filename string) (int, string) {
 
 func genHtml(data templateCodeData) {
 
-	templateCode, _ := template.ParseFiles("layout_code.html")
+	templateCode, _ := template.ParseFiles("layout_code.tmpl")
 	// fmt.Println(data)
 	f, _ := os.Create(data.FileName1 + "-" + data.FileName2 + ".html")
-	templateCode.Execute(f, data)
+	err := templateCode.Execute(f, data)
+	if err != nil {
+		panic(err)
+	}
 	f.Close()
 }
 
@@ -113,13 +116,13 @@ func main() {
 			}
 		}
 
-		temp := m[mapKey{filename1, filename2}].DuplicateLines
-		temp = append(temp, duplicateLine{
+		t := m[mapKey{filename1, filename2}]
+		t.DuplicateLines = append(t.DuplicateLines, duplicateLine{
 			LineRange1: lineRange{beginLine1, endLine1},
 			LineRange2: lineRange{beginLine2, endLine2},
 		})
 
-		m[mapKey{filename1, filename2}].DuplicateLines = temp
+		m[mapKey{filename1, filename2}] = t
 	}
 
 	fmt.Println(m)
