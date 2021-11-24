@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"math"
 )
 
 type lineRange struct {
@@ -23,6 +24,7 @@ type templateCodeData struct {
 	FileName1, FileName2 string
 	Code1, Code2         string
 	DuplicateLines       []duplicateLine
+	DuplicateRate        float64
 }
 
 type mapKey struct {
@@ -80,6 +82,19 @@ func getCodes(filename string) (int, string) {
 	return linenum, code
 }
 
+func calDuplicateRate(line []duplicateLine) float64 {
+	var file1lines, file2lines int
+	for _, val := range line {
+		file1lines += val.LineRange1.End - val.LineRange1.Begin
+		file2lines += val.LineRange2.End - val.LineRange2.Begin
+	}
+	if file1lines >= file2lines {
+		return math.Round(float64(file2lines) / float64(file1lines) * 100) / 100
+	} else {
+		return math.Round(float64(file1lines) / float64(file2lines) * 100) / 100
+	}
+}
+
 func genHtml(data templateCodeData) {
 
 	templateCode, _ := template.ParseFiles("layout_code.tmpl")
@@ -112,7 +127,7 @@ func main() {
 		if _, ok := m[mapKey{filename1, filename2}]; !ok {
 			m[mapKey{filename1, filename2}] = templateCodeData{
 				filename1, filename2, code1, code2,
-				[]duplicateLine{},
+				[]duplicateLine{}, float64(0),
 			}
 		}
 
@@ -125,7 +140,12 @@ func main() {
 		m[mapKey{filename1, filename2}] = t
 	}
 
-	fmt.Println(m)
+	for key, _ := range m {
+		t := m[key]
+		dupRate := calDuplicateRate(t.DuplicateLines)
+		t.DuplicateRate = dupRate * 100
+		m[key] = t
+	}
 
 	for key, _ := range m {
 		genHtml(m[key])
