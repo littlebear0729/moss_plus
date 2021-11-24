@@ -15,12 +15,12 @@
 <div class="bottom">
     <div class="leftCode">
         <span>{{.FileName1}}:</span>
-        {{range .DuplicateLines}}<span>line {{.LineRange1.BeginLine}}-{{.LineRange1.EndLine}}</span>{{end}}
+        {{range .DuplicateLines}}<span>line {{.LineRange1.Begin}}-{{.LineRange1.End}}</span>{{end}}
         <div id="leftCodeMirror"></div>
     </div>
     <div class="rightCode">
         <span>{{.FileName2}}:</span>
-        {{range .DuplicateLines}}<span>line {{.LineRange2.BeginLine}}-{{.LineRange2.EndLine}}</span>{{end}}
+        {{range .DuplicateLines}}<span>line {{.LineRange2.Begin}}-{{.LineRange2.End}}</span>{{end}}
         <div id="rightCodeMirror"></div>
     </div>
 </div>
@@ -54,7 +54,7 @@
     });
 
     {{range .DuplicateLines}}
-    leftCodeMirror.markText({line:{{.LineRange1.BeginLine}},ch:0},{line:{{.LineRange1.EndLine}},ch:0}, {
+    leftCodeMirror.markText({line:{{.LineRange1.Begin}},ch:0},{line:{{.LineRange1.End}},ch:0}, {
         className: "highlightCode",
         readOnly: true,
     });
@@ -68,7 +68,7 @@
     });
 
     {{range .DuplicateLines}}
-    rightCodeMirror.markText({line:{{.LineRange2.BeginLine}},ch:0},{line:{{.LineRange2.EndLine}},ch:0}, {
+    rightCodeMirror.markText({line:{{.LineRange2.Begin}},ch:0},{line:{{.LineRange2.End}},ch:0}, {
         className: "highlightCode",
         readOnly: true,
     });
