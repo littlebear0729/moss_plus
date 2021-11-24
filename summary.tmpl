@@ -5,7 +5,8 @@
 </head>
 <body>
 {{range .}}
-<p>{{.FileName1}} - {{.FileName2}} | {{.DuplicateRate}}%</p>
+<a href="{{.FileName1}}-{{.FileName2}}.html">{{.FileName1}} - {{.FileName2}} | {{.DuplicateRate}}%</a>
+<br>
 {{end}}
 </body>
 <style>
