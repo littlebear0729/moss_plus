@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"math"
 	"os"
 	"os/exec"
+	"sort"
 	"strconv"
 	"strings"
-	"math"
 )
 
 type lineRange struct {
@@ -89,9 +90,9 @@ func calDuplicateRate(line []duplicateLine) float64 {
 		file2lines += val.LineRange2.End - val.LineRange2.Begin
 	}
 	if file1lines >= file2lines {
-		return math.Round(float64(file2lines) / float64(file1lines) * 100) / 100
+		return math.Round(float64(file2lines)/float64(file1lines)*100) / 100
 	} else {
-		return math.Round(float64(file1lines) / float64(file2lines) * 100) / 100
+		return math.Round(float64(file1lines)/float64(file2lines)*100) / 100
 	}
 }
 
@@ -100,6 +101,20 @@ func genHtml(data templateCodeData) {
 	templateCode, _ := template.ParseFiles("layout_code.tmpl")
 	// fmt.Println(data)
 	f, _ := os.Create(data.FileName1 + "-" + data.FileName2 + ".html")
+	err := templateCode.Execute(f, data)
+	if err != nil {
+		panic(err)
+	}
+	f.Close()
+}
+
+func genSummary(data []templateCodeData) {
+	sort.Slice(data, func(i, j int) bool {
+		return data[i].DuplicateRate > data[j].DuplicateRate
+	})
+
+	templateCode, _ := template.ParseFiles("summary.tmpl")
+	f, _ := os.Create("summary.html")
 	err := templateCode.Execute(f, data)
 	if err != nil {
 		panic(err)
@@ -147,7 +162,11 @@ func main() {
 		m[key] = t
 	}
 
+	var allDup []templateCodeData
 	for key, _ := range m {
 		genHtml(m[key])
+		allDup = append(allDup, m[key])
 	}
+
+	genSummary(allDup)
 }
