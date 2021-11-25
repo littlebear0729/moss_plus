@@ -21,6 +21,7 @@ type lineRange struct {
 
 type duplicateLine struct {
 	LineRange1, LineRange2 lineRange
+	HighlightColor         int
 }
 
 type templateCodeData struct {
@@ -161,7 +162,7 @@ func main() {
 
 	m := make(map[mapKey]templateCodeData)
 
-	for _, s := range diff[1:] {
+	for i, s := range diff[1:] {
 		fmt.Println(s)
 		filename1, line1, filename2, line2 := getFiles(s)
 		beginLine1, endLine1 := getLines(line1)
@@ -186,8 +187,9 @@ func main() {
 		// Handle many similar line pairs in two files
 		t := m[mapKey{filename1, filename2}]
 		t.DuplicateLines = append(t.DuplicateLines, duplicateLine{
-			LineRange1: lineRange{beginLine1, endLine1},
-			LineRange2: lineRange{beginLine2, endLine2},
+			LineRange1:     lineRange{beginLine1, endLine1},
+			LineRange2:     lineRange{beginLine2, endLine2},
+			HighlightColor: i % 5,
 		})
 
 		m[mapKey{filename1, filename2}] = t

@@ -47,8 +47,20 @@
         /*background: #ccffcc;*/
         min-height: 90vh;
     }
-    .highlightCode {
+    .highlightCode0 {
         color: red;
+    }
+    .highlightCode1 {
+        color: #0A6E2B;
+    }
+    .highlightCode2 {
+        color: #8E0F7E;
+    }
+    .highlightCode3 {
+        color: #1817A2;
+    }
+    .highlightCode4 {
+        color: #9F4511;
     }
 </style>
 <script>
@@ -62,7 +74,7 @@
 
     {{range .DuplicateLines}}
     leftCodeMirror.markText({line:{{.LineRange1.Begin}},ch:0},{line:{{.LineRange1.End}},ch:0}, {
-        className: "highlightCode",
+        className: "highlightCode{{.HighlightColor}}",
         readOnly: true,
     });
     {{end}}
@@ -77,7 +89,7 @@
 
     {{range .DuplicateLines}}
     rightCodeMirror.markText({line:{{.LineRange2.Begin}},ch:0},{line:{{.LineRange2.End}},ch:0}, {
-        className: "highlightCode",
+        className: "highlightCode{{.HighlightColor}}",
         readOnly: true,
     });
     {{end}}
