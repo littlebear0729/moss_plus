@@ -1,2 +1,5 @@
 .idea/
 *.html
+
+output/*
+codemirror/*
