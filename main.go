@@ -116,9 +116,12 @@ func calDuplicateRate(line []duplicateLine, linenum1 int, linenum2 int) float64 
 
 // Generate a similar file pair result as a html page
 func genHtml(data templateCodeData, opt *Args) {
-	templateCode, _ := template.ParseFS(templateFile, "layout_code.tmpl")
+	templateCode, err := template.ParseFS(templateFile, "templates/layout_code.tmpl")
+	if err != nil {
+		panic(err)
+	}
 	// fmt.Println(data)
-	err := os.MkdirAll(opt.Output, 0755)
+	err = os.MkdirAll(opt.Output, 0755)
 	if err != nil {
 		panic(err)
 	}
@@ -139,7 +142,7 @@ func genSummary(data []templateCodeData, opt *Args) {
 	sort.Slice(data, func(i, j int) bool {
 		return data[i].DuplicateRate > data[j].DuplicateRate
 	})
-	templateCode, _ := template.ParseFS(templateFile, "summary.tmpl")
+	templateCode, _ := template.ParseFS(templateFile, "templates/summary.tmpl")
 	f, err := os.Create(path.Join(opt.Output, "summary.html"))
 	if err != nil {
 		panic(err)
