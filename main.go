@@ -6,7 +6,6 @@ import (
 	"github.com/jessevdk/go-flags"
 	"html/template"
 	"log"
-	"math"
 	"os"
 	"os/exec"
 	"path"
@@ -27,6 +26,7 @@ type duplicateLine struct {
 type templateCodeData struct {
 	FileName1, FileName2 string
 	Code1, Code2         string
+	LineNum1, LineNum2   int
 	DuplicateLines       []duplicateLine
 	DuplicateRate        float64
 }
@@ -92,16 +92,20 @@ func getCodes(filename string) (int, string) {
 }
 
 // Calculate duplicate rate by lines
-func calDuplicateRate(line []duplicateLine) float64 {
+func calDuplicateRate(line []duplicateLine, linenum1 int, linenum2 int) float64 {
 	var file1lines, file2lines int
 	for _, val := range line {
 		file1lines += val.LineRange1.End - val.LineRange1.Begin
 		file2lines += val.LineRange2.End - val.LineRange2.Begin
 	}
-	if file1lines >= file2lines {
-		return math.Round(float64(file2lines)/float64(file1lines)*100) / 100
+	file1lines++
+	file2lines++
+	file1dup := float64(file1lines) / float64(linenum1)
+	file2dup := float64(file2lines) / float64(linenum2)
+	if file1dup > file2dup {
+		return float64(int(file1dup * 100))
 	} else {
-		return math.Round(float64(file1lines)/float64(file2lines)*100) / 100
+		return float64(int(file2dup * 100))
 	}
 }
 
@@ -118,7 +122,7 @@ func genHtml(data templateCodeData, opt *Args) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(data)
+	// fmt.Println(data)
 	err = templateCode.Execute(f, data)
 	if err != nil {
 		panic(err)
@@ -171,8 +175,8 @@ func main() {
 		fmt.Printf("filename1: %s, from: %d, to: %d\n", filename1, beginLine1, endLine1)
 		fmt.Printf("filename2: %s, from: %d, to: %d\n", filename2, beginLine2, endLine2)
 
-		_, code1 := getCodes(filename1)
-		_, code2 := getCodes(filename2)
+		linenum1, code1 := getCodes(filename1)
+		linenum2, code2 := getCodes(filename2)
 
 		_, filename1 = path.Split(filename1)
 		_, filename2 = path.Split(filename2)
@@ -180,6 +184,7 @@ func main() {
 		if _, ok := m[mapKey{filename1, filename2}]; !ok {
 			m[mapKey{filename1, filename2}] = templateCodeData{
 				filename1, filename2, code1, code2,
+				linenum1, linenum2,
 				[]duplicateLine{}, float64(0),
 			}
 		}
@@ -198,8 +203,7 @@ func main() {
 	// Calculate duplicate rate one by one, rounded to 2 decimals
 	for key, _ := range m {
 		t := m[key]
-		dupRate := calDuplicateRate(t.DuplicateLines)
-		t.DuplicateRate = dupRate * 100
+		t.DuplicateRate = calDuplicateRate(t.DuplicateLines, t.LineNum1, t.LineNum2)
 		m[key] = t
 	}
 
