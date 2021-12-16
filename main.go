@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"embed"
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"github.com/jessevdk/go-flags"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -221,4 +223,12 @@ func main() {
 	}
 
 	genSummary(allDup, &opt)
+
+	// json file gen
+	jsonOutput, err := json.MarshalIndent(allDup, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	// fmt.Println(string(jsonOutput))
+	_ = ioutil.WriteFile("summary.json", jsonOutput, 0644)
 }
