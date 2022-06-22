@@ -98,6 +98,21 @@ func getCodes(filename string) (int, string) {
 	return linenum, code
 }
 
+// Determine whether two files from same person
+// Filename format always be like: <id>-<name>_<stu_id>.cpp
+// For example: 25-Tom_12345678.cpp
+func isSameSource(filename1 string, filename2 string) bool {
+	name1 := strings.Split(filename1, "-")
+	name2 := strings.Split(filename2, "-")
+	if len(name1) < 2 || len(name2) < 2 {
+		return false
+	}
+	if name1[1] == name2[1] {
+		return true
+	}
+	return false
+}
+
 // Calculate duplicate rate by lines
 func calDuplicateRate(line []duplicateLine, linenum1 int, linenum2 int) float64 {
 	var file1lines, file2lines int
@@ -177,6 +192,11 @@ func main() {
 	for i, s := range diff[1:] {
 		fmt.Println(s)
 		filename1, line1, filename2, line2 := getFiles(s)
+
+		if isSameSource(filename1, filename2) {
+			continue
+		}
+
 		beginLine1, endLine1 := getLines(line1)
 		beginLine2, endLine2 := getLines(line2)
 
@@ -232,3 +252,9 @@ func main() {
 	// fmt.Println(string(jsonOutput))
 	_ = ioutil.WriteFile("summary.json", jsonOutput, 0644)
 }
+
+// TODO:
+// 1. 同意提交者的文件不查重
+// 2. 指定输出文件名、文件夹名
+// 3. 好看的summary网页内嵌结果
+// 4. embed文件
