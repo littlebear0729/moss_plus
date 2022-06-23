@@ -4,11 +4,9 @@ import (
 	"bufio"
 	"embed"
 	_ "embed"
-	"encoding/json"
 	"fmt"
 	"github.com/jessevdk/go-flags"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -158,8 +156,8 @@ func genSummary(data []templateCodeData, opt *Args) {
 	sort.Slice(data, func(i, j int) bool {
 		return data[i].DuplicateRate > data[j].DuplicateRate
 	})
-	templateCode, _ := template.ParseFS(templateFile, "templates/summary_new.tmpl")
-	f, err := os.Create(path.Join(opt.Output, "summary_new.html"))
+	templateCode, _ := template.ParseFS(templateFile, "templates/summary.tmpl")
+	f, err := os.Create(path.Join(opt.Output, "summary.html"))
 	if err != nil {
 		panic(err)
 	}
@@ -242,18 +240,4 @@ func main() {
 	}
 
 	genSummary(allDup, &opt)
-
-	// json file gen
-	jsonOutput, err := json.MarshalIndent(allDup, "", "  ")
-	if err != nil {
-		panic(err)
-	}
-	// fmt.Println(string(jsonOutput))
-	_ = ioutil.WriteFile("summary.json", jsonOutput, 0644)
 }
-
-// TODO:
-// 1. 同一提交者的文件不查重 - DONE
-// 2. 指定输出文件名、文件夹名
-// 3. 好看的summary网页内嵌结果
-// 4. embed文件
