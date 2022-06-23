@@ -146,7 +146,6 @@ func genHtml(data templateCodeData, opt *Args) {
 	if err != nil {
 		panic(err)
 	}
-	// fmt.Println(data)
 	err = templateCode.Execute(f, data)
 	if err != nil {
 		panic(err)
@@ -159,8 +158,8 @@ func genSummary(data []templateCodeData, opt *Args) {
 	sort.Slice(data, func(i, j int) bool {
 		return data[i].DuplicateRate > data[j].DuplicateRate
 	})
-	templateCode, _ := template.ParseFS(templateFile, "templates/summary.tmpl")
-	f, err := os.Create(path.Join(opt.Output, "summary.html"))
+	templateCode, _ := template.ParseFS(templateFile, "templates/summary_new.tmpl")
+	f, err := os.Create(path.Join(opt.Output, "summary_new.html"))
 	if err != nil {
 		panic(err)
 	}
@@ -254,7 +253,7 @@ func main() {
 }
 
 // TODO:
-// 1. 同意提交者的文件不查重
+// 1. 同一提交者的文件不查重 - DONE
 // 2. 指定输出文件名、文件夹名
 // 3. 好看的summary网页内嵌结果
 // 4. embed文件
