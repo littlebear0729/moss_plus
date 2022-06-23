@@ -4,11 +4,9 @@ import (
 	"bufio"
 	"embed"
 	_ "embed"
-	"encoding/json"
 	"fmt"
 	"github.com/jessevdk/go-flags"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -98,6 +96,21 @@ func getCodes(filename string) (int, string) {
 	return linenum, code
 }
 
+// Determine whether two files from same person
+// Filename format always be like: <id>-<name>_<stu_id>.cpp
+// For example: 25-Tom_12345678.cpp
+func isSameSource(filename1 string, filename2 string) bool {
+	name1 := strings.Split(filename1, "-")
+	name2 := strings.Split(filename2, "-")
+	if len(name1) < 2 || len(name2) < 2 {
+		return false
+	}
+	if name1[1] == name2[1] {
+		return true
+	}
+	return false
+}
+
 // Calculate duplicate rate by lines
 func calDuplicateRate(line []duplicateLine, linenum1 int, linenum2 int) float64 {
 	var file1lines, file2lines int
@@ -131,7 +144,6 @@ func genHtml(data templateCodeData, opt *Args) {
 	if err != nil {
 		panic(err)
 	}
-	// fmt.Println(data)
 	err = templateCode.Execute(f, data)
 	if err != nil {
 		panic(err)
@@ -177,6 +189,11 @@ func main() {
 	for i, s := range diff[1:] {
 		fmt.Println(s)
 		filename1, line1, filename2, line2 := getFiles(s)
+
+		if isSameSource(filename1, filename2) {
+			continue
+		}
+
 		beginLine1, endLine1 := getLines(line1)
 		beginLine2, endLine2 := getLines(line2)
 
@@ -223,12 +240,4 @@ func main() {
 	}
 
 	genSummary(allDup, &opt)
-
-	// json file gen
-	jsonOutput, err := json.MarshalIndent(allDup, "", "  ")
-	if err != nil {
-		panic(err)
-	}
-	// fmt.Println(string(jsonOutput))
-	_ = ioutil.WriteFile("summary.json", jsonOutput, 0644)
 }
