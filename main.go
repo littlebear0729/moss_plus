@@ -42,16 +42,48 @@ type mapKey struct {
 
 // Run similarity test
 func runSim(files []string, opt *Args) []string {
-	out, err := exec.Command("bash", "-c", "sim_"+opt.Language+" -nT -w1 "+strings.Join(files, " ")).Output()
-	if err != nil {
-		log.Fatal(err)
+	var output string
+	log.Printf("All filenames: %s", files)
+	if opt.Language == "" {
+		log.Println("No language specified, all language will be tested based on the suffix of the filename.")
+		var c_file, cpp_file, java_file, other_file []string
+		for _, name := range files {
+			if strings.HasSuffix(name, "c") {
+				c_file = append(c_file, name)
+			} else if strings.HasSuffix(name, "cpp") {
+				cpp_file = append(cpp_file, name)
+			} else if strings.HasSuffix(name, "java") {
+				java_file = append(java_file, name)
+			} else {
+				other_file = append(other_file, name)
+			}
+		}
+		log.Printf("C language files: %s", c_file)
+		log.Printf("C++ language files: %s", cpp_file)
+		log.Printf("Java language files: %s", java_file)
+		log.Printf("Other language files: %s", other_file)
+		out, err := exec.Command("bash", "-c", "sim_c -nT -w1 "+strings.Join(files, " ")).Output()
+		output += string(out)
+		out, err = exec.Command("bash", "-c", "sim_c++ -nT -w1 "+strings.Join(files, " ")).Output()
+		output += string(out)
+		out, err = exec.Command("bash", "-c", "sim_java -nT -w1 "+strings.Join(files, " ")).Output()
+		output += string(out)
+		if err != nil {
+			log.Fatalln("Run sim_" + opt.Language + " error, please check dependency installation")
+		}
+	} else {
+		out, err := exec.Command("bash", "-c", "sim_"+opt.Language+" -nT -w1 "+strings.Join(files, " ")).Output()
+		output = string(out)
+		if err != nil {
+			log.Fatalln("Run sim_" + opt.Language + " error, please check dependency installation")
+		}
 	}
-	output := string(out)
 	lines := strings.Split(output, "\n")
 	var diff []string
 	// Get output line by line
 	for _, s := range lines {
-		if s != "" {
+		// Remove "Total input: 5 files (5 new, 0 old), 249 tokens"
+		if s != "" && !strings.HasSuffix(s, "tokens") {
 			diff = append(diff, s)
 		}
 	}
@@ -169,13 +201,13 @@ func genSummary(data []templateCodeData, opt *Args) {
 }
 
 type Args struct {
-	Language string `short:"l" long:"language" description:"language" default:"c++"`
+	Language string `short:"l" long:"language" description:"language"`
 	Output   string `short:"o" long:"output" description:"output" default:"output"`
 }
 
 func main() {
 	// Parse parameters
-	parser := flags.NewNamedParser("eduOJ server", flags.HelpFlag|flags.PassDoubleDash)
+	parser := flags.NewNamedParser("moss_plus", flags.HelpFlag|flags.PassDoubleDash)
 	opt := Args{}
 	parser.AddGroup("Options", "Options", &opt)
 	files, err := parser.Parse()
@@ -186,8 +218,8 @@ func main() {
 
 	m := make(map[mapKey]templateCodeData)
 
-	for i, s := range diff[1:] {
-		fmt.Println(s)
+	for i, s := range diff {
+		log.Println(s)
 		filename1, line1, filename2, line2 := getFiles(s)
 
 		if isSameSource(filename1, filename2) {
@@ -197,8 +229,8 @@ func main() {
 		beginLine1, endLine1 := getLines(line1)
 		beginLine2, endLine2 := getLines(line2)
 
-		fmt.Printf("filename1: %s, from: %d, to: %d\n", filename1, beginLine1, endLine1)
-		fmt.Printf("filename2: %s, from: %d, to: %d\n", filename2, beginLine2, endLine2)
+		log.Printf("filename1: %s, from: %d, to: %d\n", filename1, beginLine1, endLine1)
+		log.Printf("filename2: %s, from: %d, to: %d\n", filename2, beginLine2, endLine2)
 
 		linenum1, code1 := getCodes(filename1)
 		linenum2, code2 := getCodes(filename2)
