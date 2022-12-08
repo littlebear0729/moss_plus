@@ -2,6 +2,12 @@
 
 moss_plus is a code similarity tester based on similarity-tester and it can generate beautiful html page for better look.
 
+### Dependency
+
+To use moss_plus, you have to install `similarity_tester` first.
+
+Ubuntu: `sudo apt install similarity_tester`
+
 ### Usage
 
 Typical usage: `moss_plus <input_dir>/<input_files> --output <output_dir>`

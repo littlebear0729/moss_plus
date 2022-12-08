@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"embed"
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"github.com/jessevdk/go-flags"
 	"html/template"
@@ -48,6 +49,9 @@ func runSim(files []string, opt *Args) []string {
 		log.Println("No language specified, all language will be tested based on the suffix of the filename.")
 		var c_file, cpp_file, java_file, other_file []string
 		for _, name := range files {
+			if strings.HasSuffix(name, "json") {
+				continue
+			}
 			if strings.HasSuffix(name, "c") {
 				c_file = append(c_file, name)
 			} else if strings.HasSuffix(name, "cpp") {
@@ -62,11 +66,13 @@ func runSim(files []string, opt *Args) []string {
 		log.Printf("C++ language files: %s", cpp_file)
 		log.Printf("Java language files: %s", java_file)
 		log.Printf("Other language files: %s", other_file)
-		out, err := exec.Command("bash", "-c", "sim_c -nT -w1 "+strings.Join(files, " ")).Output()
+		out, err := exec.Command("bash", "-c", "sim_c -nT -w1 "+strings.Join(c_file, " ")).Output()
 		output += string(out)
-		out, err = exec.Command("bash", "-c", "sim_c++ -nT -w1 "+strings.Join(files, " ")).Output()
+		out, err = exec.Command("bash", "-c", "sim_c++ -nT -w1 "+strings.Join(cpp_file, " ")).Output()
 		output += string(out)
-		out, err = exec.Command("bash", "-c", "sim_java -nT -w1 "+strings.Join(files, " ")).Output()
+		out, err = exec.Command("bash", "-c", "sim_java -nT -w1 "+strings.Join(java_file, " ")).Output()
+		output += string(out)
+		out, err = exec.Command("bash", "-c", "sim_text -nT -w1 "+strings.Join(other_file, " ")).Output()
 		output += string(out)
 		if err != nil {
 			log.Fatalln("Run sim_" + opt.Language + " error, please check dependency installation")
@@ -83,10 +89,11 @@ func runSim(files []string, opt *Args) []string {
 	// Get output line by line
 	for _, s := range lines {
 		// Remove "Total input: 5 files (5 new, 0 old), 249 tokens"
-		if s != "" && !strings.HasSuffix(s, "tokens") {
+		if s != "" && !strings.HasPrefix(s, "Total input") {
 			diff = append(diff, s)
 		}
 	}
+	//log.Println(diff)
 	return diff
 }
 
@@ -198,6 +205,21 @@ func genSummary(data []templateCodeData, opt *Args) {
 		panic(err)
 	}
 	f.Close()
+
+	// json file gen
+	jsonOutput, err := json.MarshalIndent(data, "", "  ")
+	err = os.WriteFile(path.Join(opt.Output, "summary.json"), jsonOutput, 0644)
+
+	// chart file gen
+	chartHtml, _ := templateFile.ReadFile("templates/chart.html")
+	f, err = os.Create(path.Join(opt.Output, "chart.html"))
+	_, err = f.Write(chartHtml)
+	chartJS, _ := templateFile.ReadFile("templates/chart.js")
+	f, err = os.Create(path.Join(opt.Output, "chart.js"))
+	_, err = f.Write(chartJS)
+	if err != nil {
+		panic(err)
+	}
 }
 
 type Args struct {
